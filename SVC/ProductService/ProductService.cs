@@ -1,6 +1,7 @@
 ﻿using BL.DTO;
 using BL.Models;
 using DAL.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using SVC.CategoryService;
 using System;
@@ -363,10 +364,16 @@ namespace SVC.ProductService
             }
 
             var query = _context.Products
-                .Where(p => !p.IsDeleted && p.CompanyId == companyId)
+                .Join(
+                    _context.Companies.Where(c => c.CompanyId == companyId && !c.IsDeleted ), 
+                    p => p.CompanyId, 
+                    c => c.CompanyId, 
+                    (p, c) => p
+                )
+                .Where(p => !p.IsDeleted)
                 .OrderBy(p => p.ProductName);
 
-            if(query.Count() == 0)
+            if (query.Count() == 0)
             {
                 resp.StatusCode = 404;
                 resp.StatusMessage = "Product not found.";
@@ -379,9 +386,10 @@ namespace SVC.ProductService
             {
                 List<Category> categories = await GetProductCategory(prod.ProductId, companyId);
                 prod.Categories = categories;
-            }
 
-            
+                List<ProductPicture> pictures = await GetProductPicture(prod.ProductId);
+                prod.ProductPictures = pictures;
+            }
 
 
             resp.StatusCode = 200;
@@ -391,26 +399,46 @@ namespace SVC.ProductService
             return resp;
         }
 
-        public async Task<List<Category>> GetProductCategory(Guid productId, Guid companyId)
+        private async Task<List<Category>> GetProductCategory(Guid productId, Guid companyId)
         {
-            Response<Product> resp = new Response<Product>();
+            List<Category> categories = new List<Category>();
 
-            if (productId == Guid.Empty || companyId == Guid.Empty) return null;
+            if (productId == Guid.Empty || companyId == Guid.Empty)
+            {
+                return categories;
+            }
             
             var query = _context.Categories
                 .Join(_context.ProductCategories, c => c.CategoryId, pc => pc.CategoryId, (c, pc) => new { Category = c, ProductCategory = pc })
                 .Where(j => j.Category.CompanyId == companyId && !j.Category.IsDeleted && j.ProductCategory.ProductId == productId)
                 .Select(j => j.Category);
 
-            
             if(query.Count() > 0)
             {
-                return query.ToList();
+                categories = query.ToList();
             }
 
-            return null;
-            
+            return categories;           
+        }
 
+        private async Task<List<ProductPicture>> GetProductPicture(Guid productId)
+        {
+            List<ProductPicture> pictures = new List<ProductPicture>();
+
+            if(productId == Guid.Empty)
+            {
+                return pictures;
+            }
+
+            var query = _context.ProductPictures
+                .Where(pp => pp.ProductId == productId && !pp.IsDeleted);
+
+            if(query.Count() > 0)
+            {
+                pictures = query.ToList();
+            }
+
+            return pictures;
         }
 
         #endregion
