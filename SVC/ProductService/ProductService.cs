@@ -190,41 +190,6 @@ namespace SVC.ProductService
             return resp;
         }
 
-        private async Task<Response<ProductCategory>> AddProductCategory2(List<CategoryDto> categories, Guid productId)
-        {
-            Response<ProductCategory> resp = new Response<ProductCategory>();
-
-            if (categories == null || categories.Count == 0)
-            {
-                resp.StatusCode = 404;
-                resp.StatusMessage = "Category not found.";
-                return resp;
-            }
-
-            if (productId == Guid.Empty)
-            {
-                resp.StatusCode = 404;
-                resp.StatusMessage = "Product not found.";
-                return resp;
-            }
-
-            foreach(var cat in categories)
-            {
-                ProductCategory category = new ProductCategory();
-                category.ProductId = productId;
-                category.CategoryId = cat.CategoryId;
-
-                _context.ProductCategories.Add(category);
-            }
-
-            _context.SaveChanges();
-            
-            resp.StatusCode = 200;
-            resp.StatusMessage = "Success.";
-
-            return resp;
-        }
-
         private async Task<Response<ProductPicture>> AddProductPicture(List<ProductPictureDto> productPictures, Guid productId)
         {
             Response<ProductPicture> resp = new Response<ProductPicture>();
