@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SVC.CategoryService;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -389,6 +391,12 @@ namespace SVC.ProductService
 
                 List<ProductPicture> pictures = await GetProductPicture(prod.ProductId);
                 prod.ProductPictures = pictures;
+
+                List<ProductPackage> packages = await GetProductPackage(prod.ProductId);
+                prod.ProductPackages = packages;
+
+                List<Ingredient> ingredients = await GetProductIngredient(prod.ProductId, companyId);
+                prod.ProductIngredients = ingredients;
             }
 
 
@@ -439,6 +447,54 @@ namespace SVC.ProductService
             }
 
             return pictures;
+        }
+
+        private async Task<List<ProductPackage>> GetProductPackage(Guid productId)
+        {
+            List<ProductPackage> packages = new List<ProductPackage>();
+
+            if (productId == Guid.Empty)
+            {
+                return packages;
+            }
+
+            var query = _context.ProductPackages
+                .Where(pp => pp.ProductId == productId && !pp.IsDeleted);
+
+            if (query.Count() > 0)
+            {
+                packages = query.ToList();
+            }
+
+            return packages;
+        }
+
+        private async Task<List<Ingredient>> GetProductIngredient(Guid productId, Guid companyId)
+        {
+            List<Ingredient> ingredients = new List<Ingredient>();
+
+            if (productId == Guid.Empty || companyId == Guid.Empty)
+            {
+                return ingredients;
+            }
+
+            var query = _context.Ingredients
+                .Join(
+                    _context.ProductIngredients
+                        .Where(prodIng => prodIng.ProductId == productId),
+                    i => i.IngredientId,
+                    prodIng => prodIng.IngredientId,
+                    (i, prodIng) => i
+                )
+                .Where(i => i.CompanyId == companyId && !i.IsDeleted);
+
+            if (query.Count() > 0)
+            {
+                ingredients = query.ToList();
+            }
+
+            return ingredients;
+
         }
 
         #endregion

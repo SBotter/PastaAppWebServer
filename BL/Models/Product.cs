@@ -19,7 +19,7 @@ namespace BL.Models
         public List<Category> Categories { get; set; } = new List<Category>();
         public List<ProductPicture> ProductPictures { get; set; } = new List<ProductPicture>();
         public List<ProductPackage> ProductPackages { get; set; } = new List<ProductPackage>();
-        public List<ProductIngredient> ProductIngredients { get; set; } = new List<ProductIngredient>();
+        public List<Ingredient> ProductIngredients { get; set; } = new List<Ingredient>();
         public List<ProductCookInstruction> ProductCookInstructions { get; set; } = new List<ProductCookInstruction>();
 
     }
