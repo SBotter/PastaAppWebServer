@@ -47,12 +47,7 @@ namespace DAL.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("CategoryId");
-
-                    b.HasIndex("ProductId");
 
                     b.ToTable("Categories");
                 });
@@ -139,12 +134,7 @@ namespace DAL.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("IngredientId");
-
-                    b.HasIndex("ProductId");
 
                     b.ToTable("Ingredients");
                 });
@@ -196,7 +186,9 @@ namespace DAL.Migrations
 
                     b.HasKey("ProductId", "CategoryId");
 
-                    b.ToTable("ProductCategories");
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("BL.Models.ProductCookInstruction", b =>
@@ -209,7 +201,9 @@ namespace DAL.Migrations
 
                     b.HasKey("ProductId", "CookInstructionId");
 
-                    b.ToTable("ProductCookInstructions");
+                    b.HasIndex("CookInstructionId");
+
+                    b.ToTable("ProductCookInstructions", (string)null);
                 });
 
             modelBuilder.Entity("BL.Models.ProductIngredient", b =>
@@ -222,7 +216,9 @@ namespace DAL.Migrations
 
                     b.HasKey("ProductId", "IngredientId");
 
-                    b.ToTable("ProductIngredients");
+                    b.HasIndex("IngredientId");
+
+                    b.ToTable("ProductIngredients", (string)null);
                 });
 
             modelBuilder.Entity("BL.Models.ProductPackage", b =>
@@ -305,20 +301,6 @@ namespace DAL.Migrations
                     b.ToTable("ProductPictures");
                 });
 
-            modelBuilder.Entity("BL.Models.Category", b =>
-                {
-                    b.HasOne("BL.Models.Product", null)
-                        .WithMany("Categories")
-                        .HasForeignKey("ProductId");
-                });
-
-            modelBuilder.Entity("BL.Models.Ingredient", b =>
-                {
-                    b.HasOne("BL.Models.Product", null)
-                        .WithMany("ProductIngredients")
-                        .HasForeignKey("ProductId");
-                });
-
             modelBuilder.Entity("BL.Models.Product", b =>
                 {
                     b.HasOne("BL.Models.Company", null)
@@ -328,13 +310,61 @@ namespace DAL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BL.Models.ProductCookInstruction", b =>
+            modelBuilder.Entity("BL.Models.ProductCategory", b =>
                 {
-                    b.HasOne("BL.Models.Product", null)
-                        .WithMany("ProductCookInstructions")
+                    b.HasOne("BL.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BL.Models.ProductCookInstruction", b =>
+                {
+                    b.HasOne("BL.Models.CookInstruction", "CookInstruction")
+                        .WithMany()
+                        .HasForeignKey("CookInstructionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CookInstruction");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BL.Models.ProductIngredient", b =>
+                {
+                    b.HasOne("BL.Models.Ingredient", "Ingredient")
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("BL.Models.ProductPackage", b =>
@@ -357,12 +387,6 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("BL.Models.Product", b =>
                 {
-                    b.Navigation("Categories");
-
-                    b.Navigation("ProductCookInstructions");
-
-                    b.Navigation("ProductIngredients");
-
                     b.Navigation("ProductPackages");
 
                     b.Navigation("ProductPictures");

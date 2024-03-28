@@ -1,6 +1,8 @@
 using DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using SVC.CategoryService;
+using SVC.CookInstructionService;
+using SVC.IngredientService;
 using SVC.ProductService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<ICookInstructionService, CookInstructionService>();
 
 builder.Services.AddDbContext<DataContext>(options =>
     options

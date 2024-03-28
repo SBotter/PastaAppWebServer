@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240325234244_AddCookInstructioTable")]
-    partial class AddCookInstructioTable
+    [Migration("20240328042616_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -190,7 +190,22 @@ namespace DAL.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("ProductCategories");
+                    b.ToTable("ProductCategories", (string)null);
+                });
+
+            modelBuilder.Entity("BL.Models.ProductCookInstruction", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CookInstructionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ProductId", "CookInstructionId");
+
+                    b.HasIndex("CookInstructionId");
+
+                    b.ToTable("ProductCookInstructions", (string)null);
                 });
 
             modelBuilder.Entity("BL.Models.ProductIngredient", b =>
@@ -203,7 +218,57 @@ namespace DAL.Migrations
 
                     b.HasKey("ProductId", "IngredientId");
 
-                    b.ToTable("ProductIngredients");
+                    b.HasIndex("IngredientId");
+
+                    b.ToTable("ProductIngredients", (string)null);
+                });
+
+            modelBuilder.Entity("BL.Models.ProductPackage", b =>
+                {
+                    b.Property<Guid>("PackageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("PackageDescription")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PackageName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<float>("PackagePrice")
+                        .HasColumnType("real");
+
+                    b.Property<float>("PackageSize")
+                        .HasColumnType("real");
+
+                    b.Property<string>("PackageUnit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("PackageId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductPackages");
                 });
 
             modelBuilder.Entity("BL.Models.ProductPicture", b =>
@@ -249,23 +314,65 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("BL.Models.ProductCategory", b =>
                 {
-                    b.HasOne("BL.Models.Category", null)
-                        .WithMany("ProductCategories")
+                    b.HasOne("BL.Models.Category", "Category")
+                        .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BL.Models.Product", null)
-                        .WithMany("ProductCategories")
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BL.Models.ProductCookInstruction", b =>
+                {
+                    b.HasOne("BL.Models.CookInstruction", "CookInstruction")
+                        .WithMany()
+                        .HasForeignKey("CookInstructionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CookInstruction");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("BL.Models.ProductIngredient", b =>
                 {
+                    b.HasOne("BL.Models.Ingredient", "Ingredient")
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BL.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BL.Models.ProductPackage", b =>
+                {
                     b.HasOne("BL.Models.Product", null)
-                        .WithMany("ProductIngredients")
+                        .WithMany("ProductPackages")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -280,16 +387,9 @@ namespace DAL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BL.Models.Category", b =>
-                {
-                    b.Navigation("ProductCategories");
-                });
-
             modelBuilder.Entity("BL.Models.Product", b =>
                 {
-                    b.Navigation("ProductCategories");
-
-                    b.Navigation("ProductIngredients");
+                    b.Navigation("ProductPackages");
 
                     b.Navigation("ProductPictures");
                 });

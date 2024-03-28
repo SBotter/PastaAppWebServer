@@ -28,8 +28,8 @@ namespace DAL.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-        
+            //base.OnModelCreating(modelBuilder);
+            
             modelBuilder.ApplyConfiguration(new FluentCompany());
             modelBuilder.ApplyConfiguration(new FluentProduct());
             modelBuilder.ApplyConfiguration(new FluentCategory());

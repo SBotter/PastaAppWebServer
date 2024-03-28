@@ -29,6 +29,57 @@ namespace DAL.FluentConfig
 
             builder.Property(p => p.IsDeleted)
                 .HasDefaultValue(false);
+
+            builder.HasMany(p => p.Categories)
+                .WithMany(c => c.products)
+                .UsingEntity<ProductCategory>(
+                    j => j
+                        .HasOne(pc => pc.Category)
+                        .WithMany()
+                        .HasForeignKey(pc => pc.CategoryId),
+                    j => j
+                        .HasOne(pc => pc.Product)
+                        .WithMany()
+                        .HasForeignKey(pc => pc.ProductId),
+                    j =>
+                    {
+                        j.HasKey(pc => new { pc.ProductId, pc.CategoryId });
+                        j.ToTable("ProductCategories");
+                    });
+
+            builder.HasMany(p => p.ProductIngredients)
+                .WithMany(i => i.products)
+                .UsingEntity<ProductIngredient>(
+                    j => j
+                        .HasOne(ping => ping.Ingredient)
+                        .WithMany()
+                        .HasForeignKey(ping => ping.IngredientId),
+                    j => j
+                        .HasOne(ping => ping.Product)
+                        .WithMany()
+                        .HasForeignKey(ping => ping.ProductId),
+                    j =>
+                    {
+                        j.HasKey(ping => new { ping.ProductId, ping.IngredientId });
+                        j.ToTable("ProductIngredients");
+                    });
+
+            builder.HasMany(p => p.ProductCookInstructions)
+                .WithMany(ci => ci.products)
+                .UsingEntity<ProductCookInstruction>(
+                    j => j
+                        .HasOne(ci => ci.CookInstruction)
+                        .WithMany()
+                        .HasForeignKey(ci => ci.CookInstructionId),
+                    j => j
+                        .HasOne(ci => ci.Product)
+                        .WithMany()
+                        .HasForeignKey(ci => ci.ProductId),
+                    j =>
+                    {
+                        j.HasKey(ci => new { ci.ProductId, ci.CookInstructionId });
+                        j.ToTable("ProductCookInstructions");
+                    });
         }
     }
 }

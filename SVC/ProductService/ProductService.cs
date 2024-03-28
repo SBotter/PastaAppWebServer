@@ -4,6 +4,8 @@ using DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using SVC.CategoryService;
+using SVC.CookInstructionService;
+using SVC.IngredientService;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -20,11 +22,15 @@ namespace SVC.ProductService
     {
         private readonly DataContext _context;
         private readonly ICategoryService _categoryService;
+        private readonly IIngredientService _ingredientService;
+        private readonly ICookInstructionService _cookInstructionService;
 
-        public ProductService(DataContext context, ICategoryService categoryService)
+        public ProductService(DataContext context, ICategoryService categoryService, IIngredientService ingredientService, ICookInstructionService cookInstructionService)
         {
             _context = context;
             _categoryService = categoryService;
+            _ingredientService = ingredientService;
+            _cookInstructionService = cookInstructionService;
         }
 
         #region POST
@@ -74,7 +80,6 @@ namespace SVC.ProductService
                             resp.StatusMessage = "Error: Category not saved.";
                             return resp;
                         }
-                        prod.Categories.AddRange(responseCategory.Results);
                     }
 
                     //add pictures
@@ -106,7 +111,7 @@ namespace SVC.ProductService
                     //add ingredients
                     if (product.ProductIngredients.Count > 0)
                     {
-                        Response<ProductIngredient> responseIngredient = new Response<ProductIngredient>();
+                        Response<Ingredient> responseIngredient = new Response<Ingredient>();
                         responseIngredient = await AddProductIngredient(product.ProductIngredients, prod.ProductId);
                         if (responseIngredient.StatusCode != 200)
                         {
@@ -119,7 +124,7 @@ namespace SVC.ProductService
                     //add Cook Instructions
                     if(product.ProductCookInstructions.Count > 0)
                     {
-                        Response<ProductCookInstruction> responseInstruction = new Response<ProductCookInstruction>();
+                        Response<CookInstruction> responseInstruction = new Response<CookInstruction>();
                         responseInstruction = await AddProductCookInstruction(product.ProductCookInstructions, prod.ProductId);
                         if (responseInstruction.StatusCode != 200)
                         {
@@ -277,9 +282,9 @@ namespace SVC.ProductService
             return resp;
         }
 
-        private async Task<Response<ProductIngredient>> AddProductIngredient(List<ProductIngredientDto> ingredients, Guid productId)
+        private async Task<Response<Ingredient>> AddProductIngredient(List<ProductIngredientDto> ingredients, Guid productId)
         {
-            Response<ProductIngredient> resp = new Response<ProductIngredient>();
+            Response<Ingredient> resp = new Response<Ingredient>();
 
             if(ingredients == null || ingredients.Count == 0)
             {
@@ -295,16 +300,26 @@ namespace SVC.ProductService
                 return resp;
             }
 
-            foreach(var ingredient in ingredients)
+            foreach(var ing in ingredients)
             {
-                ProductIngredient ing = new ProductIngredient();
-                ing.ProductId = productId;
-                ing.IngredientId = ingredient.IngredientId;
+                ProductIngredient prodIngredient = new ProductIngredient();
+                prodIngredient.ProductId = productId;
+                prodIngredient.IngredientId = ing.IngredientId;
 
-                _context.ProductIngredients.Add(ing);
+                _context.ProductIngredients.Add(prodIngredient);
             }
 
             _context.SaveChanges();
+
+            Response<Ingredient> ingredient = new Response<Ingredient>();
+            foreach (var ing in ingredients)
+            {
+                ingredient = await _ingredientService.GetIngredient(ing.IngredientId);
+                if (ingredient != null)
+                {
+                    resp.Results.AddRange(ingredient.Results);
+                }
+            }
 
             resp.StatusCode = 200;
             resp.StatusMessage = "Success.";
@@ -312,14 +327,14 @@ namespace SVC.ProductService
             return resp;
         }
 
-        private async Task<Response<ProductCookInstruction>> AddProductCookInstruction(List<ProductCookInstructionDto> cookInstructions, Guid productId)
+        private async Task<Response<CookInstruction>> AddProductCookInstruction(List<ProductCookInstructionDto> cookInstructions, Guid productId)
         {
-            Response<ProductCookInstruction> resp = new Response<ProductCookInstruction>();
+            Response<CookInstruction> resp = new Response<CookInstruction>();
 
             if (cookInstructions == null || cookInstructions.Count == 0)
             {
                 resp.StatusCode = 404;
-                resp.StatusMessage = "Cook Instructions not found.";
+                resp.StatusMessage = "Cook Instruction not found.";
                 return resp;
             }
 
@@ -340,6 +355,16 @@ namespace SVC.ProductService
             }
 
             _context.SaveChanges();
+         
+            Response<CookInstruction> cookInst = new Response<CookInstruction>();
+            foreach (var ci in cookInstructions)
+            {
+                cookInst = await _cookInstructionService.GetCookInstruction(ci.CookInstructionId);
+                if (cookInst != null)
+                {
+                    resp.Results.AddRange(cookInst.Results);
+                }
+            }
 
             resp.StatusCode = 200;
             resp.StatusMessage = "Success.";
@@ -397,6 +422,10 @@ namespace SVC.ProductService
 
                 List<Ingredient> ingredients = await GetProductIngredient(prod.ProductId, companyId);
                 prod.ProductIngredients = ingredients;
+
+                List<CookInstruction> cookInstructions = await GetProductCookInstruction(prod.ProductId, companyId);
+                prod.ProductCookInstructions = cookInstructions;
+
             }
 
 
@@ -497,6 +526,34 @@ namespace SVC.ProductService
 
         }
 
+        private async Task<List<CookInstruction>> GetProductCookInstruction(Guid productId, Guid companyId)
+        {
+            List<CookInstruction> cookInstructions = new List<CookInstruction>();
+
+            if (productId == Guid.Empty || companyId == Guid.Empty)
+            {
+                return cookInstructions;
+            }
+
+            var query = _context.CookInstructions
+                .Join(
+                    _context.ProductCookInstructions
+                        .Where(pci => pci.ProductId == productId),
+                    ci => ci.CookInstructionId,
+                    pci => pci.CookInstructionId,
+                    (ci, pci) => ci
+                )
+                .Where(ci => ci.CompanyId == companyId && !ci.IsDeleted);
+            
+            if (query.Count() > 0)
+            {
+                cookInstructions = query.ToList();
+            }
+
+            return cookInstructions;
+
+        }
+    
         #endregion
     }
 }
