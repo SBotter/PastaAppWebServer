@@ -1,4 +1,4 @@
-﻿using BL.DTO;
+﻿using BL.DTO.Product;
 using BL.Models;
 using DAL.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,7 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SVC.ProductService
 {
@@ -62,6 +63,7 @@ namespace SVC.ProductService
                     prod.ProductId = Guid.NewGuid();
                     prod.ProductName = product.ProductName;
                     prod.ProductDescription = product.ProductDescription;
+                    prod.ProductType = product.ProductType;
                     prod.IsDeleted = false;
                     prod.CreatedDate = DateTime.Now;
                     prod.DeletedDate = null;
@@ -152,7 +154,7 @@ namespace SVC.ProductService
             return resp;
         }
 
-        private async Task<Response<Category>> AddProductCategory(List<CategoryDto> categories, Guid productId)
+        private async Task<Response<Category>> AddProductCategory(List<ProductCategoryDto> categories, Guid productId)
         {
             Response<Category> resp = new Response<Category>();
 
@@ -386,55 +388,125 @@ namespace SVC.ProductService
             if (companyId == Guid.Empty)
             {
                 resp.StatusCode = 404;
-                resp.StatusMessage = "Comapany not found.";
+                resp.StatusMessage = "Company not found.";
                 return resp;
             }
 
-            var query = _context.Products
-                .Join(
-                    _context.Companies.Where(c => c.CompanyId == companyId && !c.IsDeleted ), 
-                    p => p.CompanyId, 
-                    c => c.CompanyId, 
-                    (p, c) => p
-                )
-                .Where(p => !p.IsDeleted)
-                .OrderBy(p => p.ProductName);
+            var result = _context.Products
+                .Where(p => p.CompanyId == companyId && !p.IsDeleted)
+                .Select(p => new
+                {
+                    Product = p,
+                    Categories = _context.ProductCategories
+                        .Where(pc => pc.ProductId == p.ProductId)
+                        .Select(pc => pc.Category)
+                        .Where(c => !c.IsDeleted)
+                        .ToList(),
+                    ProductPictures = _context.ProductPictures
+                        .Where(pp => pp.ProductId == p.ProductId && !pp.IsDeleted)
+                        .ToList(),
+                    ProductPackages = _context.ProductPackages
+                        .Where(pp => pp.ProductId == p.ProductId && !pp.IsDeleted)
+                        .ToList(),
+                    Ingredients = _context.ProductIngredients
+                        .Where(pi => pi.ProductId == p.ProductId)
+                        .Select(pi => pi.Ingredient)
+                        .Where(i => !i.IsDeleted)
+                        .ToList(),
+                    CookInstructions = _context.ProductCookInstructions
+                        .Where(pci => pci.ProductId == p.ProductId)
+                        .Select(pci => pci.CookInstruction)
+                        .Where(ci => !ci.IsDeleted)
+                        .ToList()
+                }).ToList();
 
-            if (query.Count() == 0)
+            foreach(var item  in result)
+            {
+                Product product = new Product();
+                product = item.Product;
+                product.Categories = item.Categories.ToList();
+                product.ProductIngredients = item.Ingredients.ToList();
+                product.ProductCookInstructions = item.CookInstructions.ToList();
+
+                products.Add(product);
+            }
+
+            if(products.Count > 0)
+            {
+                resp.StatusCode = 200;
+                resp.StatusMessage = "Success.";
+                resp.Results.AddRange(products);
+                return resp;
+
+            }
+
+            resp.StatusCode = 404;
+            resp.StatusMessage = "Product not found.";
+            return resp;
+        }
+
+
+
+        public async Task<Response<Product>> GetProduct(Guid productId)
+        {
+            Product product = new Product();
+
+            Response<Product> resp = new Response<Product>();
+
+            if (productId == Guid.Empty)
             {
                 resp.StatusCode = 404;
                 resp.StatusMessage = "Product not found.";
                 return resp;
             }
 
-            products = query.ToList();
+            var result = _context.Products
+                .Where(p => p.ProductId == productId && !p.IsDeleted)
+                .Select(p => new
+                {
+                    Product = p,
+                    Categories = _context.ProductCategories
+                        .Where(pc => pc.ProductId == p.ProductId)
+                        .Select(pc => pc.Category)
+                        .Where(c => !c.IsDeleted)
+                        .ToList(),
+                    ProductPictures = _context.ProductPictures
+                        .Where(pp => pp.ProductId == p.ProductId && !pp.IsDeleted)
+                        .ToList(),
+                    ProductPackages = _context.ProductPackages
+                        .Where(pp => pp.ProductId == p.ProductId && !pp.IsDeleted)
+                        .ToList(),
+                    Ingredients = _context.ProductIngredients
+                        .Where(pi => pi.ProductId == p.ProductId)
+                        .Select(pi => pi.Ingredient)
+                        .Where(i => !i.IsDeleted)
+                        .ToList(),
+                    CookInstructions = _context.ProductCookInstructions
+                        .Where(pci => pci.ProductId == p.ProductId)
+                        .Select(pci => pci.CookInstruction)
+                        .Where(ci => !ci.IsDeleted)
+                        .ToList()
+                }).SingleOrDefault();
 
-            foreach(var prod in products)
+            if (result != null)
             {
-                List<Category> categories = await GetProductCategory(prod.ProductId, companyId);
-                prod.Categories = categories;
+                product = result.Product;
+                product.Categories = result.Categories.ToList();
+                product.ProductIngredients = result.Ingredients.ToList();
+                product.ProductCookInstructions = result.CookInstructions.ToList();
 
-                List<ProductPicture> pictures = await GetProductPicture(prod.ProductId);
-                prod.ProductPictures = pictures;
-
-                List<ProductPackage> packages = await GetProductPackage(prod.ProductId);
-                prod.ProductPackages = packages;
-
-                List<Ingredient> ingredients = await GetProductIngredient(prod.ProductId, companyId);
-                prod.ProductIngredients = ingredients;
-
-                List<CookInstruction> cookInstructions = await GetProductCookInstruction(prod.ProductId, companyId);
-                prod.ProductCookInstructions = cookInstructions;
+                resp.StatusCode = 200;
+                resp.StatusMessage = "Success.";
+                resp.Results.Add(product);
+                return resp;
 
             }
 
-
-            resp.StatusCode = 200;
-            resp.StatusMessage = "Success.";
-            resp.Results = query.ToList();
-
+            resp.StatusCode = 404;
+            resp.StatusMessage = "Product not found.";
             return resp;
         }
+
 
         private async Task<List<Category>> GetProductCategory(Guid productId, Guid companyId)
         {

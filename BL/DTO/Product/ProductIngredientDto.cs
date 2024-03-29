@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BL.DTO
+namespace BL.DTO.Product
 {
-    public class ProductPictureDto
+    public class ProductIngredientDto
     {
-        public string PictureUrl { get; set; } = string.Empty;
+        public Guid IngredientId { get; set; }
     }
 }

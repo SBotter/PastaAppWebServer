@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BL.DTO
+namespace BL.DTO.Product
 {
-    public class ProductIngredientDto
+    public class ProductCookInstructionDto
     {
-        public Guid IngredientId { get; set; }
+        public Guid CookInstructionId { get; set; }
     }
 }

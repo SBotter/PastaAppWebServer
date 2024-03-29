@@ -12,6 +12,7 @@ namespace BL.Models
         public Guid ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string ProductDescription { get; set; } = string.Empty;
+        public string ProductType { get; set; } = string.Empty;
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? DeletedDate { get; set; }

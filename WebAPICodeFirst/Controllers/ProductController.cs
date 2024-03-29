@@ -1,4 +1,4 @@
-﻿using BL.DTO;
+﻿using BL.DTO.Product;
 using BL.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +31,16 @@ namespace WebAPICodeFirst.Controllers
         {
             Guid companyId = new Guid("8454ADAA-6414-4007-A337-25BEFC00CF66");
             Response<Product> response = await _productService.GetProducts(companyId);
-            return response;            
+            return response;
+        }
+
+        [HttpGet]
+        [Route("GetProducts/{Id}")]
+        public async Task<Response<Product>> GetProduct(Guid Id)
+        {
+            Guid companyId = new Guid("8454ADAA-6414-4007-A337-25BEFC00CF66");
+            Response<Product> response = await _productService.GetProduct(Id);
+            return response;
         }
     }
 }

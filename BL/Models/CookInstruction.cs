@@ -12,6 +12,7 @@ namespace BL.Models
         public Guid CompanyId { get; set; }
         public Guid CookInstructionId { get; set; }
         public string CookInstructionDescription { get; set; } = string.Empty;
+        public int CookInstructionOrden { get; set; }
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? DeletedDate { get; set; }

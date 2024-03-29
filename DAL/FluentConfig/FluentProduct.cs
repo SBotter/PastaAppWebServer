@@ -23,6 +23,10 @@ namespace DAL.FluentConfig
                 .IsRequired()
                 .HasMaxLength(2000);
 
+            builder.Property(p => p.ProductType)
+                .IsRequired()
+                .HasMaxLength(255);
+
             builder.HasOne<Company>()
                 .WithMany()
                 .HasForeignKey(p => p.CompanyId);

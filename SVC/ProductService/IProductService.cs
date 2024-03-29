@@ -1,4 +1,4 @@
-﻿using BL.DTO;
+﻿using BL.DTO.Product;
 using BL.Models;
 using System;
 using System.Collections.Generic;
@@ -12,5 +12,6 @@ namespace SVC.ProductService
     {
         Task<Response<Product>> AddProduct(ProductDto product);
         Task<Response<Product>> GetProducts(Guid CompanyId);
+        Task<Response<Product>> GetProduct(Guid productId);
     }
 }
